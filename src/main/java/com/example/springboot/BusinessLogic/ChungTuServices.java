@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -38,6 +39,9 @@ public class ChungTuServices {
     public List<ChungTuModel> getAllChungTuDuyet(String user){
     	return chungTuDAO.getAllChungTuDuyet(user);
     }
+    public Boolean checkAuthentication (String maCT, String user) {
+    	return chungTuDAO.checkAuthentication(maCT, user);
+    }
     public List<TrangThaiModel> getNhatKiChungTu(String maCT) {
     	return chungTuDAO.getNhatKiChungTu(maCT);
     }
@@ -56,7 +60,8 @@ public class ChungTuServices {
     public ResponseEntity<String> postYeuCauChungTu (YeuCauChungTu yeuCau) {
 //    	System.out.println(yeuCau.getNguoiDuyet());
     	System.out.println(yeuCau.getMaForm());
-    	List<Map<String,String>> nguoiDuyetCheckList = chungTuDAO.listCheckNguoiDuyet(yeuCau.getMaForm());
+    	List<Map<String,String>> nguoiDuyetCheckList = chungTuDAO.listCheckNguoiDuyet(yeuCau.getMaLoai());
+//    	System.out.println(nguoiDuyetCheckList);
     	for(Map<String,Object> nguoiDuyetInput : yeuCau.getNguoiDuyet()) {
         	Boolean flag = false;
     		for(Map<String,String> nguoiDuyetCheck : nguoiDuyetCheckList) {
@@ -268,11 +273,146 @@ public class ChungTuServices {
 //    	System.out.println(capNhatTrangThai);
     	return ResponseEntity.status(200).body("Đã hủy");
     }
-    public List<LoaiChungTuModel> getAllLoaiCT(){
-    	return chungTuDAO.getAllLoaiCT();
+    public List<LoaiChungTuModel> getAllLoaiCT(String user){
+    	return chungTuDAO.getAllLoaiCT(user);
     }
     public List<FormFieldModel> getAllFormFields(String formId){
     	return chungTuDAO.getAllFormFields(formId);
+    }
+    public  ResponseEntity<String> processing(String maCT, String user){
+    	try {
+    	Boolean checkIsTurn = chungTuDAO.checkTurnApprove(maCT, user);
+//    	System.out.println(checkIsTurn);
+    	List<Map<String,String>> checkApproveKind = chungTuDAO.checkApproveKind(maCT,user);
+    	Map<String,String> thisApprover = new HashMap<>();
+//    	System.out.println(checkApproveKind);
+    	List<Map<String,String>> test = new ArrayList<Map<String,String>>();
+    	for(Map<String,String> singleApprover : checkApproveKind) {
+//    		System.out.println(singleApprover);
+
+    		if(singleApprover.get("user_update").equals(user)) {
+    			thisApprover.put("doc_id", singleApprover.get("doc_id"));
+    			thisApprover.put("user_update", singleApprover.get("user_update"));
+    			thisApprover.put("approve_kind_code", singleApprover.get("approve_kind_code"));
+    			thisApprover.put("lvl", singleApprover.get("lvl"));
+    			thisApprover.put("time_update", singleApprover.get("time_update"));
+    			thisApprover.put("result", singleApprover.get("result"));
+    		}
+    	}
+//    	System.out.println(thisApprover.get("result"));
+    	Boolean isTimeToApprove = true;
+    	//Check coi duyet chua
+    	if(thisApprover.get("result") != null) {
+    		System.out.println("Nguoi nay duyet roi");
+    	  	return ResponseEntity.status(200).body("Không thể duyệt");
+    	}
+    	//Check neu result cua chung tu da co nguoi duyet chua neu kind = OR
+    	//Neu chua co ai duyet thi bat dau check lvl thap hon neu co
+    	if(thisApprover.get("approve_kind_code").equals("OR")) {
+    		for(Map<String,String> singleApprover : checkApproveKind) {
+    			if(singleApprover.get("result") != null && singleApprover.get("lvl").equals(thisApprover.get("lvl"))) {
+    				//return da co nguoi duyet neu kind = OR
+    				System.out.println("(OR) Da co nguoi duyet o lvl: " +thisApprover.get("lvl"));
+    				isTimeToApprove = false;
+                	return ResponseEntity.status(200).body("Không thể duyệt");
+    			}
+    		}
+    	}
+    	//Check cac buoc duyet nho hon neu co:
+    	//Neu trong buoc duyet nho hon kind = OR  => check chi can 1 cai result 
+    	//Neu trong buoc duyet nho hon kind = MUS => check tat ca cac buoc duyet o cung cap da co result chua
+    	List<Map<String,String>> smallerLvls = new ArrayList<Map<String, String>>();
+    	int targetLevel = Integer.parseInt(thisApprover.get("lvl"));
+    	System.out.println("target: "+targetLevel);
+    	for(Map<String,String> singleApprover : checkApproveKind) {
+    		for (int i = 1; i < targetLevel; i++) {
+    			if (Integer.parseInt(singleApprover.get("lvl")) == i) {
+//    			    System.out.print(singleApprover.get("lvl")+" ");
+//    				System.out.print(singleApprover.get("user_update")+" ");
+//    				System.out.println(singleApprover.get("approve_kind_code")+" ");
+    				Map<String,String> smallerLvl = new HashMap<>();
+    				smallerLvl.put("lvl",singleApprover.get("lvl"));
+    				smallerLvl.put("user", singleApprover.get("user_update"));
+    				smallerLvl.put("approve_kind_code", singleApprover.get("approve_kind_code"));
+    				smallerLvl.put("result", singleApprover.get("result"));
+    			 	smallerLvls.add(smallerLvl);
+    			}
+    		}
+    	}
+    	//List nguoi duyet cap nho hon
+    	System.out.println(smallerLvls);
+		
+    	for (int i = 1; i < targetLevel; i++) {
+    	    int count = 0; // Biến đếm
+    	    int countStep = 0;
+    	    String kind = " ";
+	    	ArrayList<Object> a = new ArrayList<>();
+
+    	    for (Map<String, String> smaller : smallerLvls) {
+    	        if (Integer.parseInt(smaller.get("lvl")) == i) {
+    	            // Nếu có một dòng có cùng lvl
+    	            count++;
+    	            if (smaller.get("approve_kind_code").equals("OR")) {
+    	            	kind = "OR";
+    	                System.out.println(smaller.get("lvl") + " " +smaller.get("user")+" "+ smaller.get("approve_kind_code")+ " "+smaller.get("result"));      
+    	                if(smaller.get("result") != null && smaller.get("result").equals("0")) {
+    	            		System.out.println(smaller.get("user")+" o cap duyet " + smaller.get("lvl")+" da tu choi");
+    	                	isTimeToApprove = false;
+    	                	return ResponseEntity.status(200).body("Không thể duyệt");
+
+    	                }
+    	                if(smaller.get("result") != null && !smaller.get("result").equals("0")) {
+    	                	a.add(new Object());
+    	                }
+    	            } else if (smaller.get("approve_kind_code").equals("MUS")) {
+    	            	kind = "MUS";
+    	                System.out.println(smaller.get("lvl") + " " +smaller.get("user")+" "+ smaller.get("approve_kind_code")+ " "+smaller.get("result"));
+    	            	if(smaller.get("result") != null && smaller.get("result").equals("0")) {
+    	            		System.out.println(smaller.get("user")+" o cap duyet " + smaller.get("lvl")+" da tu choi");
+    	            		isTimeToApprove = false;
+    	                	return ResponseEntity.status(200).body("Không thể duyệt");
+    	            	}
+    	                if(smaller.get("result") != null && !smaller.get("result").equals("0")) {
+    	                	a.add(new Object());
+    	                }
+    	            }
+    	        }  
+    	    }
+    	    for(Object b : a) {
+            	countStep++;
+            }
+            System.out.println("Level "+ i + " da duyet "+ countStep + " buoc");
+    	    // Hiển thị số lần xuất hiện của lvl
+    	    System.out.println("Level " + i + " co " + count + " buoc duyet " + kind);
+    	    if ("OR".equals(kind)) {
+    	        if (countStep > 0) {
+    	            System.out.println("=> Level " + i + " da duyet");
+    	        } else {
+    	            System.out.println("=> Level " + i + " chua duyet du");
+    	            isTimeToApprove = false;
+    	        }
+    	    } else if ("MUS".equals(kind)) {
+    	        if (countStep == count) {
+    	            System.out.println("=> Level " + i + " da duyet");
+    	        } else {
+    	            System.out.println("=> Level " + i + " chua duyet du");
+    	            isTimeToApprove = false;
+    	        }
+    	    } else {
+    	        System.out.println("Kind không hợp lệ");
+    	    }
+    	}
+
+    	if(isTimeToApprove == false) {
+    		System.out.println("==> Khong the duyet");
+        	return ResponseEntity.status(200).body("Không thể duyệt");
+    	}else {
+    		System.out.println("==> Duyet di bro");
+        	return ResponseEntity.status(200).body("Duyệt đi bồ tèo");
+    	}
+    	}catch(Exception e) {
+        	return null;
+    	}
     }
 }
 

@@ -19,7 +19,7 @@ public class JWTGenerator {
 //	private static final SecretKey secretKey = Keys.secretKeyFor(io.jsonwebtoken.SignatureAlgorithm.HS256);
 	private static final String secretKey = "duylannnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn";
 
-	private long validityInMilliseconds = 3600000; //ms
+	private long validityInMilliseconds = 360000000; //ms
 	 public String createToken(String user, String fullname) {
 	        Claims claims = Jwts.claims().setSubject(user);
 	        claims.put("user",user);
@@ -35,7 +35,7 @@ public class JWTGenerator {
 	                .compact();
 	 }
 	 public Map<String,Object> tokenDecrypt (String token){
-		 System.out.println(token);
+//		 System.out.println(token);
 		 Jws<Claims> claimsJws = Jwts.parserBuilder()
 	                .setSigningKey(secretKey)
 	                .build()

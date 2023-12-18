@@ -12,6 +12,7 @@ public class TrangThaiMapper implements RowMapper<TrangThaiModel> {
 		 trangThai.setMaTrangThaiCT(resultSet.getInt("doc_status_id"));
 		 trangThai.setMaTT(resultSet.getString("status"));
 		 trangThai.setNguoiCapNhat(resultSet.getString("user_update"));
+		 trangThai.setUser(resultSet.getString("user"));
 		 trangThai.setThoiGianCapNhat(resultSet.getTimestamp("time_update").toLocalDateTime());
 		 return trangThai;
 	 }

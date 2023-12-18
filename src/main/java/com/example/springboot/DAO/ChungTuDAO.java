@@ -44,8 +44,19 @@ public class ChungTuDAO {
 		 		+ "where ck.user_update = ?";
 	    return jdbcTemplate.query(sql, new ChungTuMapper(),user);
 	}
+	public Boolean checkAuthentication (String maCT, String user) {
+		try {
+		String sql = "select distinct on (c.doc_id) c.doc_id  from chungtu c join chungtu_ketqua ck on ck.doc_id  = c.doc_id "
+				+ "where c.doc_id = ? and user_create = ? or c.doc_id = ? and ck.user_update = ? ";
+		String userAuthenticated = jdbcTemplate.queryForObject(sql,String.class, maCT,user,maCT,user);
+		return true;
+		}catch(EmptyResultDataAccessException e) {
+			return false;
+		}
+		
+	}
 	public List<TrangThaiModel> getNhatKiChungTu(String maCT) {
-		String sql="select ct.doc_status_id as doc_status_id, c.doc_id as doc_id, as2.status_name as status, ua.full_name as user_update, ct.time_update as time_update "
+		String sql="select ct.doc_status_id as doc_status_id, c.doc_id as doc_id, as2.status_name as status, ua.full_name as user_update,ua.id as user, ct.time_update as time_update "
 				+ "FROM chungtu c "
 				+ "JOIN chungtu_trangthai ct on c.doc_id = ct.doc_id "
 				+ "JOIN ams_status as2 on ct.status_id = as2.id "
@@ -246,29 +257,60 @@ public class ChungTuDAO {
 		}
 	}
 	
-	public List<LoaiChungTuModel> getAllLoaiCT(){
-		String sql="select * from ams_form_type";
-		return jdbcTemplate.query(sql, new LoaiCTMapper());
+	public List<LoaiChungTuModel> getAllLoaiCT(String user){
+		String sql="select aft.id , aft.form_type_name , aft.form_id "
+				+ "from ams_form_type aft "
+				+ "join ams_form_type_team aftt on aftt.form_type_id = aft.id "
+				+ "join ams_team_user atu on atu.id = aftt.user_team_id "
+				+ "join ams_user au on au.id = atu.user_id "
+				+ "where au.id = ?";
+		return jdbcTemplate.query(sql, new LoaiCTMapper(),user);
 	}
 	public List<FormFieldModel> getAllFormFields(String formId) {
 		String sql = "SELECT * FROM form_field "
 				+ "where form_id = ?";
 	    return jdbcTemplate.query(sql,new Object[] {formId}, new FormFieldRowMapper());
 	}
-	public List<Map<String, String>> listCheckNguoiDuyet(String maForm){
-		String sql = "select distinct on (au.id) au.id ,afta.lvl, aft.form_id "
+	public List<Map<String, String>> listCheckNguoiDuyet(String maLoai){
+		String sql = "select distinct on (au.id, afta.lvl) au.id ,afta.lvl, aft.form_id "
 				+ "from ams_form_type_approver afta "
 				+ "join ams_form_type_condition aftc on afta.condition_id  =aftc.id "
 				+ "join ams_form_type aft on aft.id = aftc.form_type_id "
-				+ "join ams_form af on af.id = aft.form_id "
 				+ "join ams_team_user atu on atu.id  = afta.user_team_id "
 				+ "join ams_user au on au.id  = atu.user_id "
-				+ "where af.id = ? ";
+				+ "where aft.id = ? ";
 		return jdbcTemplate.query(sql, (rs, rowNum)->{
 				Map<String,String> nguoiDuyet = new HashMap<>();
 				nguoiDuyet.put("id",rs.getString("id"));
 				nguoiDuyet.put("lvl",rs.getString("lvl"));
 				return nguoiDuyet;
-		},maForm);
+		},maLoai);
+	}
+	public Boolean checkTurnApprove(String maCT, String user) {
+		try {
+		String sql = "select ck.user_update "
+				+ "from chungtu_ketqua ck "
+				+ "join chungtu_trangthai ct on ct.doc_id  = ck.doc_id "
+				+ "where "
+				+ "	ck.doc_id = ? and ck.user_update = ? and ck.\"result\" isnull  and ct.user_update = ? and ct.status_id = 'TT002' ";
+		String result = jdbcTemplate.queryForObject(sql,String.class,maCT,user,user);
+		return true;
+		}catch(EmptyResultDataAccessException e) {
+			return false;
+		}
+	}
+	public List<Map<String,String>> checkApproveKind(String maCT, String user) {
+		String sql = "select * from chungtu_ketqua ck where doc_id = ? ";
+		return jdbcTemplate.query(sql, (rs,rowNum)->{
+			Map<String,String> allResult = new HashMap<>();
+			allResult.put("doc_result_id",rs.getString("doc_result_id"));
+			allResult.put("doc_id",rs.getString("doc_id"));
+			allResult.put("lvl", rs.getString("lvl"));
+			allResult.put("approve_kind_code",rs.getString("approve_kind_code"));
+			allResult.put("result", rs.getString("result"));
+			allResult.put("user_update", rs.getString("user_update"));
+			allResult.put("time_update", rs.getString("time_update"));
+			return allResult;
+		},maCT);
 	}
 }

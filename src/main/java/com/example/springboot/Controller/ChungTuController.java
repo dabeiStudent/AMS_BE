@@ -42,20 +42,43 @@ public class ChungTuController {
     @GetMapping("/all-to-approve/{current}/{token}")
     public List<ChungTuModel> getAllChungTuDuyet(@PathVariable(value="current") int page, @PathVariable(value="token") String token) {
     	Map<String, Object>deCrypted = jwtGen.tokenDecrypt(token);
-//    	System.out.println(deCrypted.get("user"));
     	String user = deCrypted.get("user").toString();
     	return chungTuService.getAllChungTuDuyet(user);
     }
-    @GetMapping("/nhat-ki/{maCT}")
-    public List<TrangThaiModel> getNhatKiChungTu(@PathVariable(value="maCT") String maCT) {
+    @GetMapping("/kiem-tra-duyet/{maCT}/{token}")
+    public ResponseEntity<String> kiemTraDuyet(@PathVariable(value="maCT") String maCT, @PathVariable(value="token") String token){
+    	Map<String, Object>deCrypted = jwtGen.tokenDecrypt(token);
+    	String user = deCrypted.get("user").toString();
+    	if(chungTuService.checkAuthentication(maCT, user).equals(false)) {
+    		return null;
+    	}
+    	return chungTuService.processing(maCT, user);
+    }
+    @GetMapping("/nhat-ki/{maCT}/{token}")
+    public List<TrangThaiModel> getNhatKiChungTu(@PathVariable(value="maCT") String maCT, @PathVariable(value="token") String token) {
+    	Map<String, Object>deCrypted = jwtGen.tokenDecrypt(token);
+    	String user = deCrypted.get("user").toString();
+    	System.out.println(user);
+    	System.out.println(maCT);
+
     	return chungTuService.getNhatKiChungTu(maCT);
     }
-    @GetMapping("/noi-dung/{maCT}")
-    public ChiTietCTModel getChiTietChungTu(@PathVariable(value="maCT") String maCT) {
+    @GetMapping("/noi-dung/{maCT}/{token}")
+    public ChiTietCTModel getChiTietChungTu(@PathVariable(value="maCT") String maCT, @PathVariable(value="token") String token) {
+    	Map<String, Object>deCrypted = jwtGen.tokenDecrypt(token);
+    	String user = deCrypted.get("user").toString();
+    	if(chungTuService.checkAuthentication(maCT, user).equals(false)) {
+    		return null;
+    	}
     	return chungTuService.getChiTietChungTu(maCT);
     }
-    @GetMapping("/ket-qua-duyet/{maCT}")
-    public List<KetQuaModel> getKetQuaChungTu(@PathVariable(value="maCT") String maCT){
+    @GetMapping("/ket-qua-duyet/{maCT}/{token}")
+    public List<KetQuaModel> getKetQuaChungTu(@PathVariable(value="maCT") String maCT, @PathVariable(value="token") String token){
+    	Map<String, Object>deCrypted = jwtGen.tokenDecrypt(token);
+    	String user = deCrypted.get("user").toString();
+    	if(chungTuService.checkAuthentication(maCT, user).equals(false)) {
+    		return null;
+    	}
     	return chungTuService.getKetQuaChungTu(maCT);
     }
     @GetMapping("/lay-ten-nguoi-duyet/{id}")
@@ -85,14 +108,24 @@ public class ChungTuController {
     public ResponseEntity<String> cancelChungTu(@PathVariable(value="maCT") String maCT){
     	return chungTuService.cancelChungTu(maCT);
     }
-    @GetMapping("/get-loai-chung-tu/{page}")
-    public List<LoaiChungTuModel> getAllLoaiCT(@PathVariable(value="page") int page){
-    	return chungTuService.getAllLoaiCT();
+    @GetMapping("/get-loai-chung-tu/{page}/{token}")
+    public List<LoaiChungTuModel> getAllLoaiCT(@PathVariable(value="page") int page,@PathVariable(value="token") String token){
+    	Map<String, Object>deCrypted = jwtGen.tokenDecrypt(token);
+    	String user = deCrypted.get("user").toString();
+
+    	return chungTuService.getAllLoaiCT(user);
     }
     @GetMapping("/get-form-field/{formId}")
     public List<FormFieldModel> getAllFormFields(@PathVariable(value="formId") String formId){
     	return chungTuService.getAllFormFields(formId);
     }
     //Test
-    
+    @PostMapping("/duyet-chung-tu/{maCT}/{token}")
+    public ResponseEntity<String> processing(@PathVariable(value="maCT") String maCT,
+    										@PathVariable(value="token") String token){
+    	Map<String, Object>deCrypted = jwtGen.tokenDecrypt(token);
+    	String user = deCrypted.get("user").toString();
+    	
+    	return null;
+    }
 }

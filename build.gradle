@@ -19,6 +19,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'javax.json.bind:javax.json.bind-api:1.0'
+	implementation 'javax.servlet:javax.servlet-api:4.0.1'
 	implementation 'org.eclipse:yasson:1.0.7'
     implementation 'org.springframework.security:spring-security-crypto:5.5.1'
 

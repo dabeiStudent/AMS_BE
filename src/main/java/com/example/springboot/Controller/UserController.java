@@ -14,7 +14,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.springboot.BusinessLogic.UserServices;
 import com.example.springboot.Model.UserModel;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
+
 
 @RestController
 @RequestMapping("/user")
@@ -35,14 +38,14 @@ public class UserController {
     	}
     }
     @PostMapping("/login")
-    public ResponseEntity<String> userLogin(@RequestBody UserModel userModel, HttpServletResponse response){
+    public ResponseEntity<String> userLogin(@RequestBody UserModel userModel, HttpServletResponse response,HttpServletRequest request){
     	String user = userModel.getId();
     	String passWord = userModel.getPassWord();
     	if(user =="" || passWord == "") {
     		return ResponseEntity.status(404).body("Vui lòng nhập đẩy đủ thông tin");
     	}else {
     		System.out.println(user +" "+ passWord);
-    		return userServices.userLogin(user, passWord, response);
+    		return userServices.userLogin(user, passWord, response,request);
     	}
     }
 }

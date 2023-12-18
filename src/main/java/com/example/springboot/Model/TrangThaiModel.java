@@ -8,15 +8,17 @@ public class TrangThaiModel {
 	private String maCT;
 	private String maTT;
 	private String nguoiCapNhat;
+	private String user;
 	private LocalDateTime thoiGianCapNhat;
 	public TrangThaiModel() {
 		
 	}
-	public TrangThaiModel(int maTrangThaiCT, String maCT, String maTT, String nguoiCapNhat, LocalDateTime thoiGianCapNhat) {
+	public TrangThaiModel(int maTrangThaiCT, String maCT, String maTT, String nguoiCapNhat,String user, LocalDateTime thoiGianCapNhat) {
 		this.maTrangThaiCT = maTrangThaiCT;
 		this.maCT = maCT;
 		this.maTT = maTT;
 		this.nguoiCapNhat = nguoiCapNhat;
+		this.user=user;
 		this.thoiGianCapNhat = thoiGianCapNhat;
 	}
 	public int getMaTrangThaiCT() {
@@ -48,6 +50,12 @@ public class TrangThaiModel {
 	}
 	public void setThoiGianCapNhat(LocalDateTime thoiGianCapNhat) {
 		this.thoiGianCapNhat = thoiGianCapNhat;
+	}
+	public String getUser() {
+		return user;
+	}
+	public void setUser(String user) {
+		this.user = user;
 	}
 	
 }
